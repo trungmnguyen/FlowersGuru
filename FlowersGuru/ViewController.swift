@@ -18,6 +18,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     let imagePicker = UIImagePickerController()
     
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,7 +31,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        if let userPickedImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage{
+        if let userPickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage{
             
             
             guard let convertedCIImage = CIImage(image: userPickedImage) else {fatalError("cannot convert to CIImage")}
@@ -75,12 +76,23 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             "redirects" : "1",
             ]
         Alamofire.request(wikipediaURl, method: .get, parameters: parameters).responseJSON { (response) in
-            if response.result.isSuccess{
+            if response.result.isSuccess {
                 print("Got the wikipedia info")
-                print(response)
+                print(JSON(response.result.value!))
+                
+                let flowerJSON : JSON = JSON(response.result.value!)
+                let pageid = flowerJSON["query"]["pageids"][0].stringValue
+                let flowerDescription = flowerJSON["query"]["pages"][pageid]["extract"].stringValue
+                
+                self.label.text = flowerDescription
+                
+                
+            } else {
+                print("Error geting response's result")
             }
         }
     }
+    
     @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
         
         present(imagePicker,animated: true, completion: nil)
