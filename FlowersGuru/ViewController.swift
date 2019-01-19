@@ -14,6 +14,7 @@ import SwiftyJSON
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate{
     
+    let wikipediaURl = "https://en.wikipedia.org/w/api.php"
     let imagePicker = UIImagePickerController()
     
     @IBOutlet weak var imageView: UIImageView!
@@ -46,8 +47,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         guard let model = try? VNCoreMLModel(for: FlowerClassifier().model) else {fatalError("cannot import model")}
         
         let request = VNCoreMLRequest(model: model) { (request, error) in
-            let classification = request.results?.first as? VNClassificationObservation
-            self.navigationItem.title = classification?.identifier.capitalized
+            guard let classification = request.results?.first as? VNClassificationObservation else { fatalError("Could not classify image")}
+            
+            self.navigationItem.title = classification.identifier.capitalized
+            self.requestInfo(flowerName: classification.identifier)
         }
         
         let handler = VNImageRequestHandler(ciImage: image)
@@ -60,7 +63,24 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         
     }
     
-    
+    func requestInfo(flowerName: String){
+        let parameters : [String:String] = [
+            "format" : "json",
+            "action" : "query",
+            "prop" : "extracts",
+            "exintro" : "",
+            "explaintext" : "",
+            "titles" : flowerName,
+            "indexpageids" : "",
+            "redirects" : "1",
+            ]
+        Alamofire.request(wikipediaURl, method: .get, parameters: parameters).responseJSON { (response) in
+            if response.result.isSuccess{
+                print("Got the wikipedia info")
+                print(response)
+            }
+        }
+    }
     @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
         
         present(imagePicker,animated: true, completion: nil)
